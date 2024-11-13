@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.6.0/dist/web3.min.js"></script>
+
+    <!-- Font Awesome (for icons) -->
+    <script src="https://kit.fontawesome.com/84d36a2b8e.js" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="/CSS/style.css">
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav class="col-md-3 col-lg-2 d-md-block bg-dark sidebar sidebar-sticky text-white">
+            <div class="d-flex flex-column flex-shrink-0 p-3 text-white">
+                <a href="/admin/dashboard"
+                   class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+                    <span class="fs-4">E-Voting Admin Dashboard</span>
+                </a>
+                <hr>
+                <ul class="nav nav-pills flex-column mb-auto">
+                    <!-- Add MetaMask and NID link -->
+                    <li class="nav-item">
+                        <a href="#" class="nav-link text-white" id="viewAdminDetailsBtn">
+                            <i class="fas fa-id-card"></i> MetaMask and NID
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link active text-white" id="viewCandidatesBtn">
+                            <i class="fas fa-list"></i> Candidate Details
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link text-white" id="addCandidateBtn">
+                            <i class="fas fa-plus"></i> Add Candidate
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link text-white" id="voterDetailsBtn">
+                            <i class="fas fa-users"></i> Voter Details
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link text-white" id="addElectionBtn">
+                            <i class="fas fa-calendar-plus"></i> Elections
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link text-white" id="changePhaseBtn">
+                            <i class="fas fa-sync"></i> Change Phase
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link text-white" id="linkCandidateElectionBtn">
+                            <i class="fas fa-link"></i> Assign Candidates to Election
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link text-white" id="viewElectionCandidatesBtn">
+                            <i class="fas fa-users"></i> View Election Candidates
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link active text-white" id="viewElectionResultsBtn">
+                            <i class="fas fa-chart-bar"></i> Election Results
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/logout" class="nav-link text-white">
+                            <i class="fas fa-sign-out-alt"></i> LogOut
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="col-md-9 col-lg-10 p-0 m-0">
+            <!-- Header Section -->
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 ps-3 border-bottom">
+                <div class="ms-auto">
+                    <span class="me-3 fw-bold fs-5" id="username">Welcome, Admin</span>
+                </div>
+            </div>
+
+            <!-- Content Section -->
+            <div class="p-5" style="min-height: 94.16vh; background-color: #f4f4f4">
+                <div class="bg-white p-4 rounded-3 shadow-sm" id="content">
+                    <h2 class="bg-info text-white p-3 rounded-3">Admin Panel</h2>
+                    <!-- Content will be loaded dynamically based on the section -->
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+
+    let userId = 1;
+
+    // Fetch the session data from the server
+    fetch('/session-data')
+        .then(response => response.json())
+        .then(data => {
+            if (data.user && data.user.name) {
+                userId = data.user.id;
+                // Update the userName element with the session user's name
+                document.getElementById('username').innerText = 'Welcome, ' + data.user.name;
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching session data:', error);
+        });
+
+    // Show Candidate Details ---------------------------------------------------------------------------------------------------------------------------------
+    document.getElementById('viewCandidatesBtn').addEventListener('click', (event) => {
+        setActiveClass(event.target);  // Set active class for 'View Candidates' button
+
+        viewCandidates();
+    });
+
+    async function viewCandidates() {
+        // Fetch the list of candidates from the backend
+        fetch('/admin/candidates')
+            .then(response => response.json())
+            .then(candidates => {
+                // Render the table of candidates
+                document.getElementById('content').innerHTML = `
+                <h2 class="bg-info text-white p-3 rounded-3">Candidate Details</h2>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Party</th>
+                                <th>Age</th>
+                                <th>Qualification</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="candidateList">
+                            <!-- Candidate details will be populated here via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+                // Populate the candidate table
+                const candidateList = document.getElementById('candidateList');
+                candidateList.innerHTML = '';  // Clear any existing data
+
+                candidates.forEach(candidate => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                    <td>${candidate.name}</td>
+                    <td>${candidate.party}</td>
+                    <td>${candidate.age}</td>
+                    <td>${candidate.qualification}</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm" onclick="deleteCandidate(${candidate.id})">Delete</button>
+                    </td>
+                `;
+                    candidateList.appendChild(row);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading candidates:', error);
+            });
+    }
+
+    // Show candidate details when the page loads
+    document.addEventListener('DOMContentLoaded', () => {
+        ;  // Automatically show candidate details on page load
+        setActiveClass(document.getElementById('viewCandidatesBtn'));
+        viewCandidates();
+    });
+
+    // Function to delete a candidate
+    async function deleteCandidate(candidateId) {
+        if (confirm('Are you sure you want to delete this candidate?')) {
+            try {
+                const response = await fetch(`/admin/candidate/${candidateId}`, {
+                    method: 'DELETE',
+                });
+
+                if (response.ok) {
+                    alert('Candidate deleted successfully!');
+                    document.getElementById('viewCandidatesBtn').click();  // Refresh the candidate list
+                } else {
+                    alert('Error deleting candidate.');
+                }
+            } catch (error) {
+                console.error('Error deleting candidate:', error);
+            }
+        }
+    }
+
+
+    // Add Candidate Section ---------------------------------------------------------------------------------------------------------------------------------
+    document.getElementById('addCandidateBtn').addEventListener('click', (event) => {
+        setActiveClass(event.target);
+
+        document.getElementById('content').innerHTML = `
+        <h2 class="bg-success text-white p-3 rounded-3">Add Candidate Information</h2>
+        <form id="addCandidateForm">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="candidateName" class="form-label">Name</label>
+                    <input type="text" class="form-control" id="candidateName" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="candidateParty" class="form-label">Party</label>
+                    <input type="text" class="form-control" id="candidateParty" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="candidateAge" class="form-label">Age</label>
+                    <input type="number" class="form-control" id="candidateAge" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="candidateQualification" class="form-label">Qualification</label>
+                    <input type="text" class="form-control" id="candidateQualification" required>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-success mt-4">Add Candidate</button>
+        </form>
+        <div id="message" class="mt-3"></div>
+    `;
+
+        // Event listener to handle form submission for adding candidate
+        document.getElementById('addCandidateForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            // Check if admin Metamask details are correct using checkAuth()
+            const isAuthenticated = await checkAuth();
+
+            // If not authenticated, call getDetails() and stop the form submission
+            if (!isAuthenticated) {
+                await getDetails(); // Call your function to fetch admin details
+                return; // Stop the execution if not authenticated
+            }
+
+            // Prompt MetaMask transaction before adding candidate
+            const transactionSuccessful = await initiateMetaMaskTransactionForAddCandidate();
+
+            if (!transactionSuccessful) {
+                alert("MetaMask transaction failed. Candidate will not be added.");
+                return;
+            }
+
+            const name = document.getElementById('candidateName').value;
+            const party = document.getElementById('candidateParty').value;
+            const age = document.getElementById('candidateAge').value;
+            const qualification = document.getElementById('candidateQualification').value;
+
+            // Call the backend to save the candidate (to be implemented)
+            const response = await fetch('/admin/candidate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name,
+                    party,
+                    age,
+                    qualification
+                }),
+            });
+
+            const result = await response.json();
+            const messageDiv = document.getElementById('message');
+
+            if (response.ok) {
+                messageDiv.innerText = 'Candidate added successfully!';
+                messageDiv.classList.add('text-success');
+            } else {
+                messageDiv.innerText = 'Error adding candidate: ' + result.message;
+                messageDiv.classList.add('text-danger');
+            }
+        });
+    });
+
+    async function initiateMetaMaskTransactionForAddCandidate() {
+        if (typeof window.ethereum !== 'undefined') {
+            try {
+                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                const account = accounts[0];
+
+                const transactionParams = {
+                    to: '0xe7f1725e7734ce288f8367e1bb143e90bb3f0512',
+                    from: account,
+                    value: '0x0',
+                    data: '0x',
+                };
+
+                const txHash = await ethereum.request({
+                    method: 'eth_sendTransaction',
+                    params: [transactionParams],
+                });
+
+                console.log('Transaction successful with hash:', txHash);
+                return true;  // Indicate success
+
+            } catch (error) {
+                console.error('MetaMask transaction failed:', error);
+                return false;  // Indicate failure
+            }
+        } else {
+            alert('MetaMask is not installed. Please install MetaMask to continue.');
+            return false;
+        }
+    }
+
+    // Helper function to manage active class
+    function setActiveClass(selectedElement) {
+        // Get all nav links
+        const navLinks = document.querySelectorAll('.nav-link');
+
+        // Remove 'active' class from all links
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+        });
+
+        // Add 'active' class to the clicked link
+        selectedElement.classList.add('active');
+    }
+
+    // Voter Registration -------------------------------------------------------------------------------------------------------------------------------------
+    // document.getElementById('addVoterBtn').addEventListener('click', (event) => {
+    //     setActiveClass(event.target);
+    //
+    //     document.getElementById('content').innerHTML = `
+    //     <h2 class="bg-success text-white p-3 rounded-3">Add Voter Information</h2>
+    //     <form id="addVoterForm" class="mt-4">
+    //         <!-- Identification Number Field -->
+    //         <div class="mb-3">
+    //             <label for="voterIdCard" class="form-label">Identification Card Number</label>
+    //             <input type="text" class="form-control" id="voterIdCard" placeholder="Enter ID card number" required>
+    //         </div>
+    //
+    //         <!-- Wallet Linking Section -->
+    //         <div class="mb-3">
+    //             <label for="voterWalletAddress" class="form-label">MetaMask Wallet Address</label>
+    //             <div class="input-group">
+    //                 <input type="text" class="form-control" id="voterWalletAddress" placeholder="Wallet address" readonly>
+    //                 <button type="button" class="btn btn-primary" id="voterLinkWalletBtn">Link Wallet</button>
+    //             </div>
+    //         </div>
+    //
+    //         <!-- Register Voter Button -->
+    //         <button type="submit" class="btn btn-success">Add Voter</button>
+    //     </form>
+    //     <div id="message" class="mt-3"></div>
+    // `;
+    //
+    //     // Link MetaMask for voters
+    //     document.getElementById('voterLinkWalletBtn').addEventListener('click', connectMetaMaskForVoter);
+    //
+    //     // Handle form submission
+    //     document.getElementById('addVoterForm').addEventListener('submit', async (event) => {
+    //         event.preventDefault();
+    //
+    //         // Check if admin Metamask details are correct using checkAuth()
+    //         const isAuthenticated = await checkAuth();
+    //
+    //         // If not authenticated, call getDetails() and stop the form submission
+    //         if (!isAuthenticated) {
+    //             await getDetails(); // Call your function to fetch admin details
+    //             return; // Stop the execution if not authenticated
+    //         }
+    //
+    //         const idCard = document.getElementById('voterIdCard').value;
+    //         const walletAddress = document.getElementById('voterWalletAddress').value;
+    //
+    //         if (!walletAddress) {
+    //             alert('Please link your wallet first!');
+    //             return;
+    //         }
+    //
+    //         // Send voter registration data to the server
+    //         const response = await fetch('/admin/voter', {
+    //             method: 'POST',
+    //             headers: {
+    //                 'Content-Type': 'application/json',
+    //             },
+    //             body: JSON.stringify({
+    //                 idCard,
+    //                 walletAddress
+    //             }),
+    //         });
+    //
+    //         const result = await response.json();
+    //         const messageDiv = document.getElementById('message');
+    //
+    //         if (response.ok) {
+    //             messageDiv.innerText = 'Voter added successfully!';
+    //             messageDiv.classList.add('text-success');
+    //         } else {
+    //             messageDiv.innerText = 'Error adding voter: ' + result.message;
+    //             messageDiv.classList.add('text-danger');
+    //         }
+    //     });
+    // });
+
+    // Function to detect MetaMask for voters
+    async function connectMetaMaskForVoter() {
+        if (typeof window.ethereum !== 'undefined') {
+            try {
+                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                // Get the first account
+                document.getElementById('voterWalletAddress').value = accounts[0];
+            } catch (error) {
+                console.error('User rejected wallet connection', error);
+            }
+        } else {
+            alert('MetaMask is not installed. Please install MetaMask to continue.');
+        }
+    }
+
+    // Phase Change --------------------------------------------------------------------------------------------------------------------------------------------
+    document.getElementById('changePhaseBtn').addEventListener('click', (event) => {
+        setActiveClass(event.target);  // Set active class for 'Change Phase' button
+
+        // Fetch the list of elections from the server
+        fetch('/admin/elections')
+            .then(response => response.json())
+            .then(elections => {
+                // Render the form to change the phase with a dropdown for elections
+                document.getElementById('content').innerHTML = `
+                <h2 class="bg-info text-white p-3 rounded-3">Change Election Phase</h2>
+                <form id="changePhaseForm" class="mt-4">
+                    <div class="mb-3">
+                        <label for="election" class="form-label">Select Election</label>
+                        <select class="form-select" id="election" required>
+                            <option value="" disabled selected>Select an election</option>
+                            ${elections.map(election => `
+                                <option value="${election.id}">${election.name} (Current phase: ${election.phase})</option>
+                            `).join('')}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="phase" class="form-label">Select Phase</label>
+                        <select class="form-select" id="phase" required>
+                            <option value="registration">Registration Phase</option>
+                            <option value="voting">Voting Phase</option>
+                            <option value="result">Result Phase</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-success">Change Phase</button>
+                </form>
+                <div id="message" class="mt-3"></div>
+            `;
+
+                // Handle form submission to change the phase
+                document.getElementById('changePhaseForm').addEventListener('submit', async (event) => {
+                    event.preventDefault();
+
+                    // Check if admin Metamask details are correct using checkAuth()
+                    const isAuthenticated = await checkAuth();
+
+                    // If not authenticated, call getDetails() and stop the form submission
+                    if (!isAuthenticated) {
+                        await getDetails(); // Call your function to fetch admin details
+                        return; // Stop the execution if not authenticated
+                    }
+
+                    const electionId = document.getElementById('election').value;
+                    const selectedPhase = document.getElementById('phase').value;
+
+                    // Before changing phase, initiate MetaMask transaction
+                    await initiateMetaMaskTransactionForChangePhase(electionId, selectedPhase);
+
+                    // Send the selected election and phase to the server to update
+                    const response = await fetch('/admin/change-phase', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            electionId,
+                            phase: selectedPhase
+                        }),
+                    });
+
+                    const result = await response.json();
+                    const messageDiv = document.getElementById('message');
+
+                    if (response.ok) {
+                        messageDiv.innerText = 'Election phase changed successfully!';
+                        messageDiv.classList.add('text-success');
+
+                        // Redirect to the election page after a successful phase change
+                        setTimeout(() => {
+                            loadElections();  // Reload the election list page
+                        }, 2000);
+                    } else {
+                        messageDiv.innerText = 'Error changing phase: ' + result.message;
+                        messageDiv.classList.add('text-danger');
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error loading elections:', error);
+            });
+    });
+
+    // Election Phase --------------------------------------------------------------------------------------------------------------------------------------
+    document.getElementById('addElectionBtn').addEventListener('click', (event) => {
+        setActiveClass(event.target); // Set active class for 'Add Election' button
+
+        // Fetch the list of elections and render the table + button
+        loadElections();
+    });
+
+    // Function to initiate MetaMask transaction
+    async function initiateMetaMaskTransactionForChangePhase(electionId, selectedPhase) {
+        try {
+            // Request MetaMask connection
+            if (typeof window.ethereum !== 'undefined') {
+                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                const adminAddress = accounts[0];
+
+                const contractAddress = '0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0'; // Replace with your contract address
+                const abi = [
+                    {
+                        "inputs": [],
+                        "stateMutability": "nonpayable",
+                        "type": "constructor"
+                    },
+                    {
+                        "anonymous": false,
+                        "inputs": [
+                            {
+                                "indexed": false,
+                                "internalType": "uint256",
+                                "name": "electionId",
+                                "type": "uint256"
+                            },
+                            {
+                                "indexed": false,
+                                "internalType": "uint256",
+                                "name": "candidateId",
+                                "type": "uint256"
+                            },
+                            {
+                                "indexed": false,
+                                "internalType": "string",
+                                "name": "name",
+                                "type": "string"
+                            },
+                            {
+                                "indexed": false,
+                                "internalType": "string",
+                                "name": "party",
+                                "type": "string"
+                            }
+                        ],
+                        "name": "CandidateAdded",
+                        "type": "event"
+                    },
+                    {
+                        "anonymous": false,
+                        "inputs": [
+                            {
+                                "indexed": false,
+                                "internalType": "uint256",
+                                "name": "electionId",
+                                "type": "uint256"
+                            },
+                            {
+                                "indexed": false,
+                                "internalType": "string",
+                                "name": "newPhase",
+                                "type": "string"
+                            },
+                            {
+                                "indexed": false,
+                                "internalType": "uint256",
+                                "name": "timestamp",
+                                "type": "uint256"
+                            }
+                        ],
+                        "name": "PhaseChanged",
+                        "type": "event"
+                    },
+                    {
+                        "inputs": [
+                            {
+                                "internalType": "uint256",
+                                "name": "electionId",
+                                "type": "uint256"
+                            },
+                            {
+                                "internalType": "string",
+                                "name": "name",
+                                "type": "string"
+                            },
+                            {
+                                "internalType": "string",
+                                "name": "party",
+                                "type": "string"
+                            }
+                        ],
+                        "name": "addCandidate",
+                        "outputs": [],
+                        "stateMutability": "nonpayable",
+                        "type": "function"
+                    },
+                    {
+                        "inputs": [],
+                        "name": "admin",
+                        "outputs": [
+                            {
+                                "internalType": "address",
+                                "name": "",
+                                "type": "address"
+                            }
+                        ],
+                        "stateMutability": "view",
+                        "type": "function"
+                    },
+                    {
+                        "inputs": [
+                            {
+                                "internalType": "uint256",
+                                "name": "electionId",
+                                "type": "uint256"
+                            },
+                            {
+                                "internalType": "string",
+                                "name": "newPhase",
+                                "type": "string"
+                            }
+                        ],
+                        "name": "changePhase",
+                        "outputs": [],
+                        "stateMutability": "nonpayable",
+                        "type": "function"
+                    },
+                    {
+                        "inputs": [
+                            {
+                                "internalType": "uint256",
+                                "name": "",
+                                "type": "uint256"
+                            },
+                            {
+                                "internalType": "uint256",
+                                "name": "",
+                                "type": "uint256"
+                            }
+                        ],
+                        "name": "electionCandidates",
+                        "outputs": [
+                            {
+                                "internalType": "uint256",
+                                "name": "id",
+                                "type": "uint256"
+                            },
+                            {
+                                "internalType": "string",
+                                "name": "name",
+                                "type": "string"
+                            },
+                            {
+                                "internalType": "string",
+                                "name": "party",
+                                "type": "string"
+                            }
+                        ],
+                        "stateMutability": "view",
+                        "type": "function"
+                    },
+                    {
+                        "inputs": [
+                            {
+                                "internalType": "uint256",
+                                "name": "electionId",
+                                "type": "uint256"
+                            }
+                        ],
+                        "name": "getCandidates",
+                        "outputs": [
+                            {
+                                "components": [
+                                    {
+                                        "internalType": "uint256",
+                                        "name": "id",
+                                        "type": "uint256"
+                                    },
+                                    {
+                                        "internalType": "string",
+                                        "name": "name",
+                                        "type": "string"
+                                    },
+                                    {
+                                        "internalType": "string",
+                                        "name": "party",
+                                        "type": "string"
+                                    }
+                                ],
+                                "internalType": "struct ElectionPhaseManager.Candidate[]",
+                                "name": "",
+                                "type": "tuple[]"
+                            }
+                        ],
+                        "stateMutability": "view",
+                        "type": "function"
+                    }
+                ];
+
+                const web3 = new Web3(window.ethereum);
+                const contract = new web3.eth.Contract(abi, contractAddress);
+
+                // Call the smart contract method to change the phase on the blockchain
+                await contract.methods.changePhase(electionId, selectedPhase).send({ from: adminAddress });
+
+                document.getElementById('message').innerHTML = '<div class="alert alert-success">Phase successfully updated on blockchain and database!</div>';
+
+            } else {
+                alert('MetaMask is not installed. Please install it to continue.');
+            }
+        } catch (error) {
+            console.error('Error changing phase:', error);
+            document.getElementById('message').innerHTML = '<div class="alert alert-danger">An error occurred while changing phase.</div>';
+        }
+    }
+
+
+    function loadElections() {
+        // Fetch elections from the backend
+        fetch('/admin/elections')
+            .then(response => response.json())
+            .then(elections => {
+                // Render the table of elections and the Add Election button
+                document.getElementById('content').innerHTML = `
+                <h2 class="bg-info text-white p-3 rounded-3">Election List</h2>
+                <div class="table-responsive mb-4">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Phase</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="electionList">
+                            <!-- Election rows will be added here -->
+                        </tbody>
+                    </table>
+                </div>
+                <button class="btn btn-success mb-3" id="showElectionFormBtn">Add Election</button>
+                <button class="btn btn-danger mb-3 d-none" id="closeElectionFormBtn">Close</button>
+
+                <!-- Add Election Form (Hidden by Default) -->
+                <form id="addElectionForm" class="mt-4 d-none">
+                    <h3 class="bg-success text-white p-2 rounded">Add New Election</h3>
+                    <div class="mb-3">
+                        <label for="electionName" class="form-label">Election Name</label>
+                        <input type="text" class="form-control" id="electionName" placeholder="Enter election name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="startDate" class="form-label">Start Date</label>
+                        <input type="datetime-local" class="form-control" id="startDate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="endDate" class="form-label">End Date</label>
+                        <input type="datetime-local" class="form-control" id="endDate" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Election</button>
+                </form>
+                <div id="message" class="mt-3"></div>
+            `;
+
+            // Populate election table
+            const electionList = document.getElementById('electionList');
+            elections.forEach(election => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                <td>${election.name}</td>
+                <td>${new Date(election.start_date).toLocaleString()}</td>
+                <td>${new Date(election.end_date).toLocaleString()}</td>
+                <td>${election.phase}</td>
+                <td>
+                    <button class="btn btn-danger btn-sm" onclick="deleteElection(${election.id})">Delete</button>
+                </td>
+            `;
+                electionList.appendChild(row);
+            });
+
+            // Show the Add Election form when the button is clicked
+            const addElectionForm = document.getElementById('addElectionForm');
+            const showFormBtn = document.getElementById('showElectionFormBtn');
+            const closeFormBtn = document.getElementById('closeElectionFormBtn');
+
+            showFormBtn.addEventListener('click', () => {
+                addElectionForm.classList.remove('d-none');
+                closeFormBtn.classList.remove('d-none');
+                showFormBtn.classList.add('d-none'); // Hide 'Add Election' button when form is open
+            });
+
+            // Close the Add Election form
+            closeFormBtn.addEventListener('click', () => {
+                addElectionForm.classList.add('d-none');
+                closeFormBtn.classList.add('d-none');
+                showFormBtn.classList.remove('d-none'); // Show 'Add Election' button when form is closed
+            });
+
+            // Handle form submission for adding new election
+            document.getElementById('addElectionForm').addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                // Check if admin Metamask details are correct using checkAuth()
+                const isAuthenticated = await checkAuth();
+
+                // If not authenticated, call getDetails() and stop the form submission
+                if (!isAuthenticated) {
+                    await getDetails(); // Call your function to fetch admin details
+                    return; // Stop the execution if not authenticated
+                }
+
+                const electionName = document.getElementById('electionName').value;
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+
+                // Validate that the start date is before the end date
+                if (new Date(startDate) >= new Date(endDate)) {
+                    const messageDiv = document.getElementById('message');
+                    messageDiv.innerText = 'Start date must be before the end date.';
+                    messageDiv.classList.add('text-danger');
+                    return;
+                }
+
+                // Send election creation data to the server
+                const response = await fetch('/admin/election', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: electionName,
+                        startDate,
+                        endDate
+                    }),
+                });
+
+                const result = await response.json();
+                const messageDiv = document.getElementById('message');
+
+                if (response.ok) {
+                    messageDiv.innerText = 'Election added successfully!';
+                    messageDiv.classList.add('text-success');
+
+                    // Hide the form and reload the election list
+                    addElectionForm.classList.add('d-none');
+                    closeFormBtn.classList.add('d-none');
+                    showFormBtn.classList.remove('d-none');
+                    loadElections();  // Reload the elections list
+                } else {
+                    messageDiv.innerText = 'Error adding election: ' + result.message;
+                    messageDiv.classList.add('text-danger');
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error loading elections:', error);
+        });
+    }
+
+    // Function to delete an election
+    async function deleteElection(electionId) {
+        console.log(electionId)
+        if (confirm('Are you sure you want to delete this election? This will remove all associated data as well.')) {
+            try {
+                const response = await fetch(`/admin/election/${electionId}`, {
+                    method: 'DELETE',
+                });
+                console.log(response)
+                if (response.ok) {
+                    alert('Election deleted successfully!');
+                    loadElections();
+                } else {
+                    alert('Error deleting election.');
+                }
+            } catch (error) {
+                console.error('Error deleting election:', error);
+            }
+        }
+    }
+
+    // View Voter Details ----------------------------------------------------------------------------------------------------------------------------------
+    document.getElementById('voterDetailsBtn').addEventListener('click', (event) => {
+        setActiveClass(event.target);  // Set active class for 'Voter Details' button
+
+        // Fetch voter details from the backend
+        fetch('/admin/voters')
+            .then(response => response.json())
+            .then(voters => {
+                // Render the table of voters
+                document.getElementById('content').innerHTML = `
+                <h2 class="bg-info text-white p-3 rounded-3">Voter Details</h2>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>ID Card Number</th>
+                                <th>MetaMask Wallet</th>
+                                <th>Status</th>
+                                <th>Role</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="voterList">
+                            <!-- Voter details will be populated here via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+                // Populate the voter table
+                const voterList = document.getElementById('voterList');
+                voterList.innerHTML = '';  // Clear any existing data
+
+                voters.forEach(voter => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                    <td>${voter.name}</td>
+                    <td>${voter.email}</td>
+                    <td>${voter.NID || 'Not Registered'}</td>
+                    <td>${voter.metamask_address || 'Not Linked'}</td>
+                    <td>${voter.is_active ? 'Active' : 'Inactive'}</td>
+                    <td>${voter.role}</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm" onclick="deleteVoter(${voter.id})">Delete</button>
+                    </td>
+                `;
+                    voterList.appendChild(row);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading voters:', error);
+            });
+    });
+
+    // Function to delete a voter
+    async function deleteVoter(voterId) {
+        if (confirm('Are you sure you want to delete this voter?')) {
+            try {
+                const response = await fetch(`/admin/voter/${voterId}`, {
+                    method: 'DELETE',
+                });
+
+                if (response.ok) {
+                    alert('Voter deleted successfully');
+                    // Reload the voter list after deletion
+                    document.getElementById('voterDetailsBtn').click();
+                } else {
+                    alert('Error deleting voter');
+                }
+            } catch (error) {
+                console.error('Error deleting voter:', error);
+            }
+        }
+    }
+
+    // Assign Candidate to Election ---------------------------------------------------------------------------------------------------------------------------
+    document.getElementById('linkCandidateElectionBtn').addEventListener('click', async (event) => {
+        setActiveClass(event.target);  // Set active class for 'Link Candidate to Election' button
+
+        // Fetch candidates and elections from the backend
+        const [candidates, elections] = await Promise.all([
+            fetch('/admin/get_candidates').then(response => response.json()),
+            fetch('/admin/elections-reg').then(response => response.json())
+        ]);
+
+        // Render the form to link candidates to elections
+        const electionOptions = elections.length > 0
+            ? elections.map(election => `
+            <option value="${election.id}">${election.name}</option>
+        `).join('')
+            : `<option disabled>No elections available for registration</option>`;
+
+        document.getElementById('content').innerHTML = `
+    <h2 class="bg-info text-white p-3 rounded-3">Link Candidate to Election</h2>
+    <form id="linkCandidateElectionForm" class="mt-4">
+        <div class="mb-3">
+            <label for="election" class="form-label">Select Election</label>
+            <select class="form-select" id="election" ${elections.length === 0 ? 'disabled' : ''} required>
+                <option value="" disabled selected>${elections.length === 0 ? 'No Election Available for Registration' : 'Select an election'}</option>
+                ${electionOptions}
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="candidate" class="form-label">Select Candidate</label>
+            <select class="form-select" id="candidate" required>
+                <option value="" disabled selected>Select a candidate</option>
+                ${candidates.map(candidate => `
+                    <option value="${candidate.id}">${candidate.name}</option>
+                `).join('')}
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-success" ${elections.length === 0 ? 'disabled' : ''}>Link Candidate to Election</button>
+    </form>
+    <div id="message" class="mt-3"></div>
+ `;
+
+        // Handle form submission if there are elections available
+        if (elections.length > 0) {
+            document.getElementById('linkCandidateElectionForm').addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                // Check if admin Metamask details are correct using checkAuth()
+                const isAuthenticated = await checkAuth();
+
+                // If not authenticated, call getDetails() and stop the form submission
+                if (!isAuthenticated) {
+                    await getDetails(); // Call your function to fetch admin details
+                    return; // Stop the execution if not authenticated
+                }
+
+                const candidateId = document.getElementById('candidate').value;
+                const electionId = document.getElementById('election').value;
+
+                await assignCandidateToElection(candidateId, electionId);
+
+                // Send the link request to the server
+                const response = await fetch('/admin/candidate-election', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        candidateId,
+                        electionId
+                    }),
+                });
+
+                const result = await response.json();
+                const messageDiv = document.getElementById('message');
+
+                if (response.ok) {
+                    messageDiv.innerText = 'Candidate linked to election successfully!';
+                    messageDiv.classList.add('text-success');
+                } else {
+                    messageDiv.innerText = 'Error linking candidate: ' + result.message;
+                    messageDiv.classList.add('text-danger');
+                }
+            });
+        }
+    });
+
+    async function assignCandidateToElection(candidateId, electionId) {
+        try {
+            // Step 1: Initiate MetaMask transaction
+            if (typeof window.ethereum !== 'undefined') {
+                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                const adminAddress = accounts[0];
+
+                const contractAddress = '0xdc64a140aa3e981100a9beca4e685f962f0cf6c9'; // Replace with your deployed contract address
+                const abi = [ {
+                    "anonymous": false,
+                    "inputs": [
+                        {
+                            "indexed": true,
+                            "internalType": "uint256",
+                            "name": "electionId",
+                            "type": "uint256"
+                        },
+                        {
+                            "indexed": true,
+                            "internalType": "uint256",
+                            "name": "candidateId",
+                            "type": "uint256"
+                        }
+                    ],
+                    "name": "CandidateAssigned",
+                    "type": "event"
+                },
+                    {
+                        "inputs": [
+                            {
+                                "internalType": "uint256",
+                                "name": "electionId",
+                                "type": "uint256"
+                            },
+                            {
+                                "internalType": "uint256",
+                                "name": "candidateId",
+                                "type": "uint256"
+                            }
+                        ],
+                        "name": "assignCandidateToElection",
+                        "outputs": [],
+                        "stateMutability": "nonpayable",
+                        "type": "function"
+                    } ]; // Replace with your contract ABI
+
+                const web3 = new Web3(window.ethereum);
+                const contract = new web3.eth.Contract(abi, contractAddress);
+
+                // Step 2: MetaMask transaction to log the candidate assignment on-chain
+                await contract.methods.assignCandidateToElection(candidateId, electionId).send({ from: adminAddress });
+
+                document.getElementById('message').innerHTML = '<div class="alert alert-success">Candidate successfully assigned to the election.</div>';
+            } else {
+                alert('MetaMask is not installed. Please install MetaMask to continue.');
+            }
+        } catch (error) {
+            console.error('Error assigning candidate to election:', error);
+            document.getElementById('message').innerHTML = `<div class="alert alert-danger">An error occurred while assigning candidate to the election.</div>`;
+        }
+    }
+
+
+
+    // View election candidates -----------------------------------------------------------------------------------------------------------------------------
+    document.getElementById('viewElectionCandidatesBtn').addEventListener('click', async (event) => {
+        setActiveClass(event.target);  // Set active class for 'View Election Candidates' button
+
+        // Fetch the list of elections from the backend
+        const elections = await fetch('/admin/elections').then(response => response.json());
+
+        // Render the dropdown and an empty table for candidate details
+        document.getElementById('content').innerHTML = `
+        <h2 class="bg-info text-white p-3 rounded-3">View Election Candidates</h2>
+        <div class="mb-3">
+            <label for="election" class="form-label">Select Election</label>
+            <select class="form-select" id="election" required>
+                <option value="" disabled selected>Select an election</option>
+                ${elections.map(election => `
+                    <option value="${election.id}">${election.name}</option>
+                `).join('')}
+            </select>
+        </div>
+        <div class="table-responsive mt-4">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Candidate Name</th>
+                        <th>Party</th>
+                        <th>Age</th>
+                        <th>Qualification</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="candidateList">
+                    <!-- Candidate details will be populated here based on selected election -->
+                </tbody>
+            </table>
+        </div>
+    `;
+
+        // Fetch and display candidates when the election is selected
+        document.getElementById('election').addEventListener('change', async (event) => {
+            const electionId = event.target.value;
+
+            // Fetch the candidates for the selected election
+            const candidates = await fetch(`/admin/election/${electionId}/candidates`).then(response => response.json());
+
+            // Populate the table with the candidate details
+            const candidateList = document.getElementById('candidateList');
+            candidateList.innerHTML = '';  // Clear the previous data
+
+            if (candidates.length > 0) {
+                candidates.forEach(candidate => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                    <td>${candidate.name}</td>
+                    <td>${candidate.party}</td>
+                    <td>${candidate.age}</td>
+                    <td>${candidate.qualification}</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm" onclick="deleteCandidateFromElection(${candidate.id}, ${electionId})">Delete</button>
+                    </td>
+                `;
+                    candidateList.appendChild(row);
+                });
+            } else {
+                candidateList.innerHTML = '<tr><td colspan="4">No candidates found for this election.</td></tr>';
+            }
+        });
+    });
+
+    // Function to delete a candidate from an election
+    async function deleteCandidateFromElection(candidateId, electionId) {
+        if (confirm('Are you sure you want to remove this candidate from the election?')) {
+            try {
+                const response = await fetch(`/admin/election/${electionId}/candidate/${candidateId}`, {
+                    method: 'DELETE',
+                });
+
+                if (response.ok) {
+                    alert('Candidate removed successfully!');
+                    document.getElementById('election').dispatchEvent(new Event('change')); // Refresh the candidate list
+                } else {
+                    alert('Error removing candidate.');
+                }
+            } catch (error) {
+                console.error('Error removing candidate:', error);
+            }
+        }
+    }
+
+    // Election Result ---------------------------------------------------------------------------------------------------------------------------
+    // When the 'Election Results' button is clicked, load the election results
+    document.getElementById('viewElectionResultsBtn').addEventListener('click', (event) => {
+        setActiveClass(event.target);
+
+        document.getElementById('content').innerHTML = `
+        <h2 class="bg-info text-white p-3 rounded-3">Election Results</h2>
+        <div id="resultsContainer">
+            <h3>Current Elections</h3>
+            <div id="currentElectionsContainer">
+                <p>Loading current election results...</p>
+            </div>
+
+            <h3 class="mt-5">Past Elections</h3>
+            <div id="pastElectionsContainer">
+                <p>Loading past election results...</p>
+            </div>
+        </div>
+    `;
+
+        // Fetch election results from the server
+        fetch('/admin/election-results')
+            .then(response => response.json())
+            .then(data => {
+                const currentContainer = document.getElementById('currentElectionsContainer');
+                const pastContainer = document.getElementById('pastElectionsContainer');
+
+                // Clear loading text
+                currentContainer.innerHTML = '';
+                pastContainer.innerHTML = '';
+
+                // Display current elections in the "result" phase
+                if (data.currentElectionResults.length === 0) {
+                    currentContainer.innerHTML = '<p>No current election results available.</p>';
+                } else {
+                    data.currentElectionResults.forEach(election => {
+                        const table = document.createElement('table');
+                        table.classList.add('table', 'table-striped', 'table-hover', 'mt-4');
+
+                        const thead = document.createElement('thead');
+                        thead.innerHTML = `
+                        <tr>
+                            <th>Election Name</th>
+                            <th>Candidate</th>
+                            <th>Qualification</th>
+                            <th>Party</th>
+                            <th>Vote Count</th>
+                        </tr>
+                    `;
+                        table.appendChild(thead);
+
+                        const tbody = document.createElement('tbody');
+                        election.candidates.forEach(candidate => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                            <td>${election.electionName}</td>
+                            <td>${candidate.candidateName}</td>
+                            <td>${candidate.candidateQualification}</td>
+                            <td>${candidate.candidateParty}</td>
+                            <td>${candidate.voteCount}</td>
+                        `;
+                            tbody.appendChild(row);
+                        });
+                        table.appendChild(tbody);
+                        currentContainer.appendChild(table);
+                    });
+                }
+
+                // Display past elections with winners
+                if (data.pastElectionResults.length === 0) {
+                    pastContainer.innerHTML = '<p>No past election results available.</p>';
+                } else {
+                    data.pastElectionResults.forEach(election => {
+                        const header = document.createElement('h4');
+                        header.innerHTML = `Winner of <strong>${election.electionName}</strong>: <span class="text-success">${election.winner}</span>`;
+                        pastContainer.appendChild(header);
+
+                        const table = document.createElement('table');
+                        table.classList.add('table', 'table-striped', 'table-hover', 'mt-4');
+
+                        const thead = document.createElement('thead');
+                        thead.innerHTML = `
+                        <tr>
+                            <th>Candidate</th>
+                            <th>Vote Count</th>
+                        </tr>
+                    `;
+                        table.appendChild(thead);
+
+                        const tbody = document.createElement('tbody');
+                        election.candidates.forEach(candidate => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                            <td>${candidate.candidateName}</td>
+                            <td>${candidate.voteCount}</td>
+                        `;
+                            tbody.appendChild(row);
+                        });
+                        table.appendChild(tbody);
+                        pastContainer.appendChild(table);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching election results:', error);
+                document.getElementById('resultsContainer').innerHTML = '<p>Error loading results.</p>';
+            });
+    });
+
+
+
+    // Function to fetch and show the MetaMask and NID details of the admin
+    document.getElementById('viewAdminDetailsBtn').addEventListener('click', async (event) => {
+        setActiveClass(event.target);  // Set active class for this link
+
+        await getDetails();
+    });
+
+    async function checkAuth() {
+        const response = await fetch(`/admin/check-wallet-nid?userId=${userId}`);
+        const data = await response.json();
+
+        if (data.needsRegistration) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    async function getDetails() {
+        // Fetch admin details from the server
+        const response = await fetch(`/admin/check-wallet-nid?userId=${userId}`);
+        const data = await response.json();
+
+        const admin = data.adminData && data.adminData[0];
+
+        // Render the form or details for MetaMask and NID
+        if (data.needsRegistration) {
+            document.getElementById('content').innerHTML = `
+                <h2 class="bg-info text-white p-3 rounded-3">Register MetaMask and NID</h2>
+                <form id="registerWalletNidForm" class="mt-4">
+                    <div class="mb-3">
+                        <label for="nid" class="form-label">National ID Number</label>
+                        <input type="text" class="form-control" id="nid" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="walletAddress" class="form-label">MetaMask Wallet Address</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="walletAddress" readonly>
+                            <button type="button" class="btn btn-primary" id="linkWalletBtn">Link Wallet</button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success">Register</button>
+                </form>
+                <div id="message" class="mt-3"></div>
+            `;
+
+            // Link MetaMask
+            document.getElementById('linkWalletBtn').addEventListener('click', connectMetaMaskForAdmin);
+
+            // Handle form submission for registration
+            document.getElementById('registerWalletNidForm').addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                const NID = document.getElementById('nid').value;
+                const walletAddress = document.getElementById('walletAddress').value;
+
+                if (!walletAddress) {
+                    alert('Please link your wallet first!');
+                    return;
+                }
+
+                // Send data to the server
+                const response = await fetch('/admin/register-wallet-nid', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        userId,
+                        NID,
+                        metamask_address: walletAddress
+                    }),
+                });
+
+                const result = await response.json();
+                const messageDiv = document.getElementById('message');
+
+                if (response.ok) {
+                    messageDiv.innerText = 'MetaMask and NID registered successfully!';
+                    messageDiv.classList.add('text-success');
+                } else {
+                    messageDiv.innerText = 'Error registering details: ' + result.message;
+                    messageDiv.classList.add('text-danger');
+                }
+            });
+        } else {
+            // Show already registered details
+            document.getElementById('content').innerHTML = `
+                <h2 class="bg-info text-white p-3 rounded-3">Your MetaMask and NID Details</h2>
+                <p><strong>MetaMask Address:</strong> ${admin.metamask_address}</p>
+                <p><strong>National ID Number:</strong> ${admin.NID}</p>
+            `;
+        }
+    }
+
+    // Function to link MetaMask for admin
+    async function connectMetaMaskForAdmin() {
+        if (typeof window.ethereum !== 'undefined') {
+            try {
+                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                document.getElementById('walletAddress').value = accounts[0];  // Get the first account
+            } catch (error) {
+                console.error('User rejected wallet connection', error);
+            }
+        } else {
+            alert('MetaMask is not installed. Please install MetaMask to continue.');
+        }
+    }
+</script>
+</body>
+</html>

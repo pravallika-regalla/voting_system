@@ -1,0 +1,322 @@
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&display=swap');
+
+body, h1, h2, p, a {
+    font-family: "Merriweather", serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Custom Background 6a11cb */
+.index-bg {
+    /*  */
+    height: 100vh;
+    background-color: #232F3E;
+}
+
+.register-bg {
+    background-image: url("../images/background.svg");
+    background-size: cover;
+    height: 100vh;
+}
+
+/* Button Styling */
+.btn {
+    border-radius: 30px;
+    color: #000; /* Initial button text color */
+    background-color: #F4F4F4; /* Initial button background */
+    border: 2px solid #F4F4F4; /* Border matching background */
+    transition: all 0.4s ease-in-out; /* Smooth transition for all properties */
+}
+
+.btn-light:hover {
+    background-color: transparent; /* Button becomes transparent on hover */
+    color: #fff; /* Text color changes to white */
+    border: 2px solid #fff; /* Border becomes white */
+}
+
+/* Form Input Styling */
+.form-floating label {
+    color: #777;
+}
+
+.form-floating input {
+    background-color: #f4f4f4;
+    border: none;
+    border-radius: 30px;
+    padding: 20px;
+    color: #333;
+}
+
+.form-floating input:focus {
+    outline: none;
+    border-color: #0F3E9B;
+}
+
+.index-bg2{
+    /* background-image: linear-gradient(to right, #fff 0%, #0F3E9B 100%); */
+    background-color: currentColor !important;
+}
+.nav-links
+{
+    display: flex;
+    margin-left: 27rem;
+    position: relative;
+    font-family: "Merriweather", serif;
+    bottom: 3rem;
+    color: white !important;
+    top: 2px;
+}
+/* a:hover{
+    color: black;
+    text-decoration-color: #fff;
+} */
+.section-container{
+    gap: 4rem;
+    height: 80%;
+    display: flex;
+ }
+
+ .banner{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* height: 100vh; */
+}
+.logo{
+    font-size: 2rem;
+    color: white;
+}
+.logo:hover{
+    cursor: default;
+}
+nav, .nav-links{
+    display: flex;
+}
+/* nav{
+    justify-content: space-around;
+    align-items: center;
+    height: 17vh;
+} */
+.nav-links{
+    gap: 2rem;
+    list-style: none;
+    font-size: 1rem;
+    left: 0rem;
+}
+/* .content h2 b{
+    -webkit-text-fill-color: transparent;
+    -webkit-text-stroke-width: 3px;
+    -webkit-text-stroke-color: #fff;
+    font-family: montserrat;
+    font-size: 80px;
+    text-transform: uppercase;
+    letter-spacing: 12px;
+} */
+.arrow-imga{
+    height: 2rem;
+    position: relative;
+    left: 96rem;
+    top: 3rem;
+}
+.lowercase-text{
+    text-transform: lowercase !important;
+}
+.contact-info-upper-container{
+    display: flex;
+    justify-content: center;
+    border: rgb(53,53,53) solid;
+    border-color: rgb(163,163,163);
+    /* background-image: linear-gradient(to right, #fff 0%, #0F3E9B 100%); */
+    margin: 2rem auto;
+    padding: 0.5rem;
+}
+.contact-info-container{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 1rem;
+}
+.contact-info-container p{
+    font-size: larger;
+}
+#learnmore{
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    height: 100vh;
+   background-image: url(/images/skyy.jpg);
+}
+.data_style{
+    color: white;
+
+}
+.news-txt{
+    display: flex;
+    position: relative;
+    font-size: 1.2rem;
+    padding: 3rem;
+    gap: 6rem;
+}
+.desktop-nav{
+    display: flex;
+    align-items: center;
+}
+.move-left{
+    left: 9rem;
+    position: relative;
+}
+#aboutus{
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    height: 99vh;
+    background-color: aliceblue;
+}
+.new_arrow-imga{
+    height: 2rem;
+    position: relative;
+    left: 95rem;
+    top: 2rem;
+    width: 2rem;
+}
+.imgclass{
+    position: relative;
+    height: 100px;
+    width: 100px;
+    left: 8rem;
+    bottom: 3px;
+}
+#ourmission{
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    height: 100vh;
+    background-color: currentcolor;
+}
+#whatweoffer{
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    height: 99vh;
+    background-image: url(/images/offer.jpg);
+}
+#contactus{
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    height: 75vh;
+   
+}
+#join-us{
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    height: 99vh;
+}
+#footer{
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    height: 25vh;
+    top: 16rem;
+    position: relative;
+    color: white;
+}
+.social{
+    left: 16rem;
+    position: relative;
+    gap: 3rem;
+    display: flex;
+    font-size: 2rem;
+}
+.mission-img{
+    left: 5rem;
+    display: flex;
+    position: relative;
+    height: 40rem;
+}
+#video{
+    background-image: url(/images/vote1.jpg);
+    background-size: cover;
+}
+.inner-2{
+    position: relative;
+    width: 59%;
+    overflow: hidden;
+    left: 22rem;
+}
+
+
+/* styles.css */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    color: #333;
+  }
+  
+  .contact-section {
+    background-image: url(/images/blue.jpg);
+    /* background: url('https://via.placeholder.com/800x400') no-repeat center center/cover; */
+    height: 100vh;
+    position: relative;
+    color: white;
+  }
+  
+  .overlay {
+    text-align: center;
+    padding: 50px 20px;
+    top: 7rem;
+    position: relative;
+    /* background: rgba(0, 0, 0, 0.5); */
+  }
+  
+  .overlay h1 {
+    font-size: 3em;
+    margin: 0;
+    text-transform: uppercase;
+    color: Black;
+  }
+  
+  .overlay p {
+    font-size: 1.2em;
+    margin: 20px 0 0;
+  }
+  
+  .contact-info {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    /* background: white; */
+    color: black;
+    padding: 30px 0;
+    top: 9rem;
+    position: relative;
+  }
+  
+  .info-box {
+    text-align: center;
+    max-width: 300px;
+  }
+  
+  .info-box img {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .info-box h3 {
+    font-size: 1.5em;
+    margin: 15px 0 5px;
+    color: white;
+  }
+  
+  .info-box p {
+    font-size: 1em;
+    margin: 0;
+    color: #666;
+  }
+  

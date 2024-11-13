@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voting</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+
+    <!-- Font Awesome (for icons) -->
+    <script src="https://kit.fontawesome.com/84d36a2b8e.js" crossorigin="anonymous"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.6.0/dist/web3.min.js"></script>
+
+
+    <link rel="stylesheet" href="/CSS/style.css">
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav class="col-md-3 col-lg-2 d-md-block bg-dark sidebar sidebar-sticky text-white">
+            <div class="d-flex flex-column flex-shrink-0 p-3 text-white">
+                <a href="/index" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+                    <span class="fs-4">E-Vote Dashboard</span>
+                </a>
+                <hr>
+                <ul class="nav nav-pills flex-column mb-auto">
+                    <li class="nav-item">
+                        <a href="/dashboard" class="nav-link text-white" aria-current="page">
+                            <i class="fas fa-user"></i> Information
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/voter" class="nav-link text-white">
+                            <i class="fas fa-vote-yea"></i> Voter Registration
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/voting" class="nav-link active text-white">
+                            <i class="fas fa-vote-yea"></i> Voting Area
+                        </a>
+                    </li>
+                    <!-- <li>
+                        <a href="/results" class="nav-link text-white">
+                            <i class="fas fa-chart-bar"></i> Result
+                        </a>
+                    </li> -->
+                    <li>
+                        <a href="/logout" class="nav-link text-white">
+                            <i class="fas fa-sign-out-alt"></i> LogOut
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="col-md-9 col-lg-10 p-0 m-0">
+            <!-- Header Section -->
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 ps-3 border-bottom">
+                <div class="ms-auto">
+                    <span class="me-3 fw-bold fs-5 " id="username">Welcome, John D</span>
+                </div>
+            </div>
+
+            <!-- Content Section -->
+            <div class="p-5" style="min-height: 94.16vh; background-color: #f4f4f4"> <!-- Light gray background for content area -->
+                <div class="bg-white p-4 rounded-3 shadow-sm"> <!-- White background for the content box -->
+                    <h1 class="my-5">Vote for Your Candidate</h1>
+                    <div id="candidatesList" class="row ">
+                        <!-- Candidates will be dynamically populated here -->
+                    </div>
+                    <p id="message"></p>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Custom JS -->
+<script>
+    // Fetch the session data from the server
+    fetch('/session-data')
+        .then(response => response.json())
+        .then(data => {
+            if (data.user && data.user.name) {
+                // Update the userName element with the session user's name
+                document.getElementById('username').innerText = 'Welcome, ' + data.user.name;
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching session data:', error);
+        });
+
+    // Step 1: Fetch the candidates for the current election
+    async function loadCandidates() {
+        try {
+            const response = await fetch('/voting/current-election-candidates');
+
+
+            const candidatesList = document.getElementById('candidatesList');
+            candidatesList.innerHTML = ''; // Clear any previous content
+
+            // Check if there is no content (204 response)
+            if (response.status === 204) {
+                console.log(response)
+                document.getElementById('message').innerHTML = `<div class="alert alert-warning">No active election found</div>`;
+                return;
+            }
+
+            // Parse the JSON response
+            const result = await response.json();
+
+            // If candidates are returned, populate the list
+            if (result.length > 0) {
+                result.forEach(candidate => {
+                    const card = document.createElement('div');
+                    card.className = 'col-md-4 candidate-card';
+                    card.innerHTML = `
+                    <div class="card" style="margin-bottom: 20px">
+                        <div class="card-body">
+                            <h5 class="card-title">${candidate.name}</h5>
+                            <p class="card-text">${candidate.party}</p>
+                            <button class="btn btn-primary" onclick="voteForCandidate(${candidate.id})">Vote</button>
+                        </div>
+                    </div>
+                `;
+                    candidatesList.appendChild(card);
+                });
+            } else {
+                // If no candidates are returned, display a different message
+                document.getElementById('message').innerHTML = `<div class="alert alert-info">No candidates available for the current election.</div>`;
+            }
+
+        } catch (error) {
+            console.error('Error loading candidates:', error);
+            document.getElementById('message').innerHTML = `<div class="alert alert-danger">An error occurred while loading candidates.</div>`;
+        }
+    }
+
+
+
+    // Step 2: Handle the vote
+    async function voteForCandidate(candidateId) {
+        try {
+            // Request MetaMask connection
+            if (typeof window.ethereum !== 'undefined') {
+                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                const voterAddress = accounts[0];
+
+                // Step 3: Call backend to register vote in database
+                const response = await fetch('/voting', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        candidateId: candidateId,
+                        voterAddress: voterAddress
+                    }),
+                });
+
+                const result = await response.json();
+
+                // Step 4: If vote saved in DB, call the blockchain contract to store the vote on-chain
+               alert(response.ok);
+                if (response.ok) {
+                    const contractAddress = '0xdc64a140aa3e981100a9beca4e685f962f0cf6c9'; // Replace with your contract address
+                    const abi = [ {
+                        "inputs": [],
+                        "stateMutability": "nonpayable",
+                        "type": "constructor"
+                    },
+                        {
+                            "anonymous": false,
+                            "inputs": [
+                                {
+                                    "indexed": true,
+                                    "internalType": "uint256",
+                                    "name": "candidateId",
+                                    "type": "uint256"
+                                },
+                                {
+                                    "indexed": true,
+                                    "internalType": "address",
+                                    "name": "voter",
+                                    "type": "address"
+                                }
+                            ],
+                            "name": "VotedEvent",
+                            "type": "event"
+                        },
+                        {
+                            "inputs": [
+                                {
+                                    "internalType": "string",
+                                    "name": "_name",
+                                    "type": "string"
+                                }
+                            ],
+                            "name": "addCandidate",
+                            "outputs": [],
+                            "stateMutability": "nonpayable",
+                            "type": "function"
+                        },
+                        {
+                            "inputs": [
+                                {
+                                    "internalType": "uint256",
+                                    "name": "",
+                                    "type": "uint256"
+                                }
+                            ],
+                            "name": "candidates",
+                            "outputs": [
+                                {
+                                    "internalType": "uint256",
+                                    "name": "id",
+                                    "type": "uint256"
+                                },
+                                {
+                                    "internalType": "string",
+                                    "name": "name",
+                                    "type": "string"
+                                },
+                                {
+                                    "internalType": "uint256",
+                                    "name": "voteCount",
+                                    "type": "uint256"
+                                }
+                            ],
+                            "stateMutability": "view",
+                            "type": "function"
+                        },
+                        {
+                            "inputs": [],
+                            "name": "candidatesCount",
+                            "outputs": [
+                                {
+                                    "internalType": "uint256",
+                                    "name": "",
+                                    "type": "uint256"
+                                }
+                            ],
+                            "stateMutability": "view",
+                            "type": "function"
+                        },
+                        {
+                            "inputs": [],
+                            "name": "electionAdmin",
+                            "outputs": [
+                                {
+                                    "internalType": "address",
+                                    "name": "",
+                                    "type": "address"
+                                }
+                            ],
+                            "stateMutability": "view",
+                            "type": "function"
+                        },
+                        {
+                            "inputs": [
+                                {
+                                    "internalType": "uint256",
+                                    "name": "_candidateId",
+                                    "type": "uint256"
+                                }
+                            ],
+                            "name": "getVoteCount",
+                            "outputs": [
+                                {
+                                    "internalType": "uint256",
+                                    "name": "",
+                                    "type": "uint256"
+                                }
+                            ],
+                            "stateMutability": "view",
+                            "type": "function"
+                        },
+                        {
+                            "inputs": [
+                                {
+                                    "internalType": "uint256",
+                                    "name": "_candidateId",
+                                    "type": "uint256"
+                                }
+                            ],
+                            "name": "vote",
+                            "outputs": [],
+                            "stateMutability": "nonpayable",
+                            "type": "function"
+                        },
+                        {
+                            "inputs": [
+                                {
+                                    "internalType": "address",
+                                    "name": "",
+                                    "type": "address"
+                                }
+                            ],
+                            "name": "voters",
+                            "outputs": [
+                                {
+                                    "internalType": "bool",
+                                    "name": "",
+                                    "type": "bool"
+                                }
+                            ],
+                            "stateMutability": "view",
+                            "type": "function"
+                        } ]; // Replace with your contract ABI
+
+                    const web3 = new Web3(window.ethereum);
+                    const contract = new web3.eth.Contract(abi, contractAddress);
+
+                    // Call the contract method to vote
+                    await contract.methods.vote(candidateId).send({ from: voterAddress });
+
+                    document.getElementById('message').innerHTML = '<div class="alert alert-success">Vote successfully recorded on both sides!</div>';
+                } else {
+                    document.getElementById('message').innerHTML = '<div class="alert alert-danger">Error: ' + result.message + '</div>';
+                }
+            } else {
+                alert('MetaMask is not installed. Please install it to continue.');
+            }
+        } catch (error) {
+            console.error('Error voting:', error);
+            document.getElementById('message').innerHTML = '<div class="alert alert-danger">An error occurred while voting.</div>';
+        }
+    }
+
+    // Load candidates when the page is ready
+    window.onload = loadCandidates;
+</script>
+</body>
+</html>
