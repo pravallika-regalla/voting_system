@@ -76,7 +76,7 @@ router.get('/voting/current-election-candidates', async (req, res) => {
 
         // Step 2: Fetch candidates for the current election
         const [candidates] = await db.promise().query(`
-            SELECT c.id, c.name, c.party 
+            SELECT c.id, c.name, c.party, c.photo 
             FROM candidates c
             JOIN candidate_election ce ON c.id = ce.candidate_id
             WHERE ce.election_id = ?

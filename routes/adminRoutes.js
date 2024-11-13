@@ -1,11 +1,34 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
+const multer = require('multer');
+const path = require('path');
+
+const fs = require('fs');
+const uploadDir = path.join(__dirname, '../uploads/candidates/');
+
+// Create the directory if it doesn't exist
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/candidates/'); // Directory to save images
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`);
+    },
+});
+
+const upload = multer({ storage: storage });
+
+
 
 // GET route to fetch all candidates
 router.get('/admin/candidates', async (req, res) => {
     try {
-        const [candidates] = await db.promise().query('SELECT id, name, party, age, qualification FROM candidates');
+        const [candidates] = await db.promise().query('SELECT id, name, party, age, qualification, photo FROM candidates');
         res.json(candidates);
     } catch (error) {
         console.error('Error fetching candidates:', error);
@@ -25,13 +48,30 @@ router.get('/admin/get_candidates', async (req, res) => {
 });
 
 // POST route to add a new candidate
-router.post('/admin/candidate', async (req, res) => {
+// router.post('/admin/candidate', async (req, res) => {
+//     const { name, party, age, qualification } = req.body;
+
+//     try {
+//         await db.promise().query(
+//             'INSERT INTO candidates (name, party, age, qualification) VALUES (?, ?, ?, ?)',
+//             [name, party, age, qualification]
+//         );
+//         res.status(200).json({ message: 'Candidate added successfully' });
+//     } catch (error) {
+//         console.error('Error adding candidate:', error);
+//         res.status(500).json({ message: 'Server error' });
+//     }
+// });
+
+
+router.post('/admin/candidate', upload.single('photo'), async (req, res) => {
     const { name, party, age, qualification } = req.body;
+    const photo = req.file ? `/uploads/candidates/${req.file.filename}` : null;
 
     try {
         await db.promise().query(
-            'INSERT INTO candidates (name, party, age, qualification) VALUES (?, ?, ?, ?)',
-            [name, party, age, qualification]
+            'INSERT INTO candidates (name, party, age, qualification, photo) VALUES (?, ?, ?, ?, ?)',
+            [name, party, age, qualification, photo]
         );
         res.status(200).json({ message: 'Candidate added successfully' });
     } catch (error) {

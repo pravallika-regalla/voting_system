@@ -124,9 +124,10 @@
                     card.className = 'col-md-4 candidate-card';
                     card.innerHTML = `
                     <div class="card" style="margin-bottom: 20px">
-                        <div class="card-body">
-                            <h5 class="card-title">${candidate.name}</h5>
-                            <p class="card-text">${candidate.party}</p>
+                        <img src="${candidate.photo}" class="card-img-top img-thumbnail" alt="${candidate.name}" style="height: 308px;">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Candidate Name: ${candidate.name}</h5>
+                            <p class="card-text">Party Name: ${candidate.party}</p>
                             <button class="btn btn-primary" onclick="voteForCandidate(${candidate.id})">Vote</button>
                         </div>
                     </div>
@@ -169,7 +170,6 @@
                 const result = await response.json();
 
                 // Step 4: If vote saved in DB, call the blockchain contract to store the vote on-chain
-               alert(response.ok);
                 if (response.ok) {
                     const contractAddress = '0xdc64a140aa3e981100a9beca4e685f962f0cf6c9'; // Replace with your contract address
                     const abi = [ {

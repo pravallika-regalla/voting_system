@@ -34,7 +34,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', (req, res) => {
     res.sendFile('index.html', { root: path.join(__dirname, 'views') });
 });
-
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Routes
 app.use(authRoutes);
 app.use(dashboardRoutes);

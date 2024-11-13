@@ -143,6 +143,7 @@
                     <table class="table table-striped table-hover">
                         <thead>
                             <tr>
+                                <th>photo</th>
                                 <th>Name</th>
                                 <th>Party</th>
                                 <th>Age</th>
@@ -164,6 +165,7 @@
                 candidates.forEach(candidate => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
+                     <td><img src="${candidate.photo}" alt="Photo" class="img-thumbnail" style="width: 100px; height: auto;"></td>
                     <td>${candidate.name}</td>
                     <td>${candidate.party}</td>
                     <td>${candidate.age}</td>
@@ -232,6 +234,10 @@
                     <label for="candidateQualification" class="form-label">Qualification</label>
                     <input type="text" class="form-control" id="candidateQualification" required>
                 </div>
+                <div class="col-md-6">
+                    <label for="candidatePhoto" class="form-label">Photo</label>
+                    <input type="file" class="form-control" id="candidatePhoto" accept="image/*" required>
+                </div>
             </div>
             <button type="submit" class="btn btn-success mt-4">Add Candidate</button>
         </form>
@@ -259,23 +265,35 @@
                 return;
             }
 
-            const name = document.getElementById('candidateName').value;
-            const party = document.getElementById('candidateParty').value;
-            const age = document.getElementById('candidateAge').value;
-            const qualification = document.getElementById('candidateQualification').value;
+            // const name = document.getElementById('candidateName').value;
+            // const party = document.getElementById('candidateParty').value;
+            // const age = document.getElementById('candidateAge').value;
+            // const qualification = document.getElementById('candidateQualification').value;
 
-            // Call the backend to save the candidate (to be implemented)
+            // // Call the backend to save the candidate (to be implemented)
+            // const response = await fetch('/admin/candidate', {
+            //     method: 'POST',
+            //     headers: {
+            //         'Content-Type': 'application/json',
+            //     },
+            //     body: JSON.stringify({
+            //         name,
+            //         party,
+            //         age,
+            //         qualification
+            //     }),
+            // });
+
+            const formData = new FormData();
+            formData.append('name', document.getElementById('candidateName').value);
+            formData.append('party', document.getElementById('candidateParty').value);
+            formData.append('age', document.getElementById('candidateAge').value);
+            formData.append('qualification', document.getElementById('candidateQualification').value);
+            formData.append('photo', document.getElementById('candidatePhoto').files[0]); // Add the file
+
             const response = await fetch('/admin/candidate', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    name,
-                    party,
-                    age,
-                    qualification
-                }),
+                body: formData,
             });
 
             const result = await response.json();
