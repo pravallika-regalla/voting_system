@@ -222,7 +222,7 @@ nav, .nav-links{
     display: flex;
     justify-content: center;
     flex-direction: column;
-    height: 25vh;
+    height: 6vh;
     top: 16rem;
     position: relative;
     color: white;
@@ -320,3 +320,7 @@ body {
     color: #666;
   }
   
+
+
+
+ 
