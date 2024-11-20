@@ -12,7 +12,7 @@
 
     <!-- Font Awesome (for icons) -->
     <script src="https://kit.fontawesome.com/84d36a2b8e.js" crossorigin="anonymous"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="/CSS/style.css">
 </head>
 <body>
@@ -143,6 +143,7 @@
                     <table class="table table-striped table-hover">
                         <thead>
                             <tr>
+                                <th>partyphoto</th>
                                 <th>photo</th>
                                 <th>Name</th>
                                 <th>Party</th>
@@ -165,7 +166,8 @@
                 candidates.forEach(candidate => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                     <td><img src="${candidate.photo}" alt="Photo" class="img-thumbnail" style="width: 100px; height: auto;"></td>
+                    <td><img src="/${candidate.partyphoto}" alt="Photo" class="img-thumbnail" style="width: 100px; height: auto;"></td>
+                     <td><img src="/${candidate.photo}" alt="Photo" class="img-thumbnail" style="width: 100px; height: auto;"></td>
                     <td>${candidate.name}</td>
                     <td>${candidate.party}</td>
                     <td>${candidate.age}</td>
@@ -239,8 +241,8 @@
                     <input type="file" class="form-control" id="candidatePhoto" accept="image/*" required>
                 </div>
                  <div class="col-md-6">
-                    <label for="candidatePhoto" class="form-label">Party Photo</label>
-                    <input type="file" class="form-control" id="candidatePhoto" accept="image/*" required>
+                    <label for="partyphoto" class="form-label">Party Photo</label>
+                    <input type="file" class="form-control" id="partyphoto" accept="image/*" required>
                 </div>
             </div>
             <button type="submit" class="btn btn-success mt-4">Add Candidate</button>
@@ -294,6 +296,7 @@
             formData.append('age', document.getElementById('candidateAge').value);
             formData.append('qualification', document.getElementById('candidateQualification').value);
             formData.append('photo', document.getElementById('candidatePhoto').files[0]); // Add the file
+            formData.append('partyphoto', document.getElementById('partyphoto').files[0]);
 
             const response = await fetch('/admin/candidate', {
                 method: 'POST',
@@ -320,7 +323,7 @@
                 const account = accounts[0];
 
                 const transactionParams = {
-                    to: '0xe7f1725e7734ce288f8367e1bb143e90bb3f0512',
+                    to: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
                     from: account,
                     value: '0x0',
                     data: '0x',
@@ -1255,100 +1258,109 @@
                 <p>Loading current election results...</p>
             </div>
 
-            <h3 class="mt-5">Past Elections</h3>
-            <div id="pastElectionsContainer">
-                <p>Loading past election results...</p>
-            </div>
+           <h3 class="mt-5">Past Elections</h3>
+<div id="pastElectionsContainer">
+    <canvas id="pastElectionsChart" width="400" height="200"></canvas>
+</div>
         </div>
     `;
 
         // Fetch election results from the server
         fetch('/admin/election-results')
-            .then(response => response.json())
-            .then(data => {
-                const currentContainer = document.getElementById('currentElectionsContainer');
-                const pastContainer = document.getElementById('pastElectionsContainer');
+    .then(response => response.json())
+    .then(data => {
+        const currentContainer = document.getElementById('currentElectionsContainer');
+        const pastContainer = document.getElementById('pastElectionsContainer');
 
-                // Clear loading text
-                currentContainer.innerHTML = '';
-                pastContainer.innerHTML = '';
+        // Render current elections with a graph
+        if (data.currentElectionResults.length === 0) {
+            currentContainer.innerHTML = '<p>No current election results available.</p>';
+        } else {
+            // Prepare data for the chart
+            const electionNames = data.currentElectionResults.map(election => election.electionName);
+            const datasets = data.currentElectionResults.map((election, index) => ({
+                label: `Election: ${election.electionName}`,
+                data: election.candidates.map(candidate => candidate.voteCount),
+                backgroundColor: `rgba(${50 + index * 40}, ${100 + index * 30}, 192, 0.2)`,
+                borderColor: `rgba(${50 + index * 40}, ${100 + index * 30}, 192, 1)`,
+                borderWidth: 1,
+            }));
 
-                // Display current elections in the "result" phase
-                if (data.currentElectionResults.length === 0) {
-                    currentContainer.innerHTML = '<p>No current election results available.</p>';
-                } else {
-                    data.currentElectionResults.forEach(election => {
-                        const table = document.createElement('table');
-                        table.classList.add('table', 'table-striped', 'table-hover', 'mt-4');
+            // Create canvas for chart
+            currentContainer.innerHTML = `
+                <canvas id="currentElectionsChart" width="400" height="200"></canvas>
+            `;
+            const ctx = document.getElementById('currentElectionsChart').getContext('2d');
 
-                        const thead = document.createElement('thead');
-                        thead.innerHTML = `
-                        <tr>
-                            <th>Election Name</th>
-                            <th>Candidate</th>
-                            <th>Qualification</th>
-                            <th>Party</th>
-                            <th>Vote Count</th>
-                        </tr>
-                    `;
-                        table.appendChild(thead);
-
-                        const tbody = document.createElement('tbody');
-                        election.candidates.forEach(candidate => {
-                            const row = document.createElement('tr');
-                            row.innerHTML = `
-                            <td>${election.electionName}</td>
-                            <td>${candidate.candidateName}</td>
-                            <td>${candidate.candidateQualification}</td>
-                            <td>${candidate.candidateParty}</td>
-                            <td>${candidate.voteCount}</td>
-                        `;
-                            tbody.appendChild(row);
-                        });
-                        table.appendChild(tbody);
-                        currentContainer.appendChild(table);
-                    });
-                }
-
-                // Display past elections with winners
-                if (data.pastElectionResults.length === 0) {
-                    pastContainer.innerHTML = '<p>No past election results available.</p>';
-                } else {
-                    data.pastElectionResults.forEach(election => {
-                        const header = document.createElement('h4');
-                        header.innerHTML = `Winner of <strong>${election.electionName}</strong>: <span class="text-success">${election.winner}</span>`;
-                        pastContainer.appendChild(header);
-
-                        const table = document.createElement('table');
-                        table.classList.add('table', 'table-striped', 'table-hover', 'mt-4');
-
-                        const thead = document.createElement('thead');
-                        thead.innerHTML = `
-                        <tr>
-                            <th>Candidate</th>
-                            <th>Vote Count</th>
-                        </tr>
-                    `;
-                        table.appendChild(thead);
-
-                        const tbody = document.createElement('tbody');
-                        election.candidates.forEach(candidate => {
-                            const row = document.createElement('tr');
-                            row.innerHTML = `
-                            <td>${candidate.candidateName}</td>
-                            <td>${candidate.voteCount}</td>
-                        `;
-                            tbody.appendChild(row);
-                        });
-                        table.appendChild(tbody);
-                        pastContainer.appendChild(table);
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching election results:', error);
-                document.getElementById('resultsContainer').innerHTML = '<p>Error loading results.</p>';
+            // Render the chart
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.currentElectionResults[0].candidates.map(candidate => candidate.candidateName),
+                    datasets: datasets,
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Current Elections Vote Count',
+                        },
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                        },
+                    },
+                },
             });
+        }
+
+        // Render past elections as a table
+        if (data.pastElectionResults.length === 0) {
+            pastContainer.innerHTML = '<p>No past election results available.</p>';
+        } else {
+            pastContainer.innerHTML = ''; // Clear any loading text
+            data.pastElectionResults.forEach(election => {
+                const header = document.createElement('h4');
+                header.innerHTML = `Winner of <strong>${election.electionName}</strong>: <span class="text-success">${election.winner}</span>`;
+                pastContainer.appendChild(header);
+
+                const table = document.createElement('table');
+                table.classList.add('table', 'table-striped', 'table-hover', 'mt-4');
+
+                const thead = document.createElement('thead');
+                thead.innerHTML = `
+                    <tr>
+                        <th>Candidate</th>
+                        <th>Vote Count</th>
+                    </tr>
+                `;
+                table.appendChild(thead);
+
+                const tbody = document.createElement('tbody');
+                election.candidates.forEach(candidate => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${candidate.candidateName}</td>
+                        <td>${candidate.voteCount}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                table.appendChild(tbody);
+                pastContainer.appendChild(table);
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching election results:', error);
+        document.getElementById('resultsContainer').innerHTML = '<p>Error loading results.</p>';
+    });
+
+
     });
 
 

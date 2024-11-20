@@ -30,6 +30,7 @@ app.use(session({
 // Serve static files (CSS, JS, Images) from "public" directory
 app.use(express.static(path.join(__dirname, 'public')));
 
+
 // Home page route
 app.get('/', (req, res) => {
     res.sendFile('index.html', { root: path.join(__dirname, 'views') });
@@ -130,6 +131,7 @@ app.get('/opportunities', (req, res) => {
 });
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Routes
 app.use(authRoutes);
 app.use(dashboardRoutes);

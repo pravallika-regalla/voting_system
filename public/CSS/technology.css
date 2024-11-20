@@ -9,7 +9,7 @@ body {
 }
 
 .header {
-    background-color: #0078D4;
+    background-color: #0F3E9B;
     color: #fff;
     text-align: center;
     padding: 20px;
@@ -43,4 +43,9 @@ body {
 
 .footer p {
     margin: 0;
+}
+
+.text-color{
+    color: white !important;
+    text-decoration: auto !important;
 }

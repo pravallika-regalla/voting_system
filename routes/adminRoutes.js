@@ -1,42 +1,121 @@
+// const express = require('express');
+// const router = express.Router();
+// const db = require('../config/db');
+// const multer = require('multer');
+// const path = require('path');
+
+// const fs = require('fs');
+// const uploadDir = path.join(__dirname, '../uploads/candidates/');
+
+// // Create the directory if it doesn't exist
+// if (!fs.existsSync(uploadDir)) {
+//     fs.mkdirSync(uploadDir, { recursive: true });
+// }
+
+// const storage = multer.diskStorage({
+//     destination: (req, file, cb) => {
+//         cb(null, 'uploads/candidates/'); // Directory to save images
+//     },
+//     filename: (req, file, cb) => {
+//         cb(null, `${Date.now()}-${file.originalname}`);
+//     },
+// });
+
+// const upload = multer({ storage: storage });
+
+
+
+// // GET route to fetch all candidates
+// router.get('/admin/candidates', async (req, res) => {
+//     try {
+//         const [candidates] = await db.promise().query('SELECT id, name, party, age, qualification, photo, partyphoto FROM candidates');
+//         res.json(candidates);
+//     } catch (error) {
+//         console.error('Error fetching candidates:', error);
+//         res.status(500).json({ message: 'Server error' });
+//     }
+// });
+
+// GET route to fetch all candidates
+
+
+// // POST route to add a new candidate
+// // router.post('/admin/candidate', async (req, res) => {
+// //     const { name, party, age, qualification } = req.body;
+
+// //     try {
+// //         await db.promise().query(
+// //             'INSERT INTO candidates (name, party, age, qualification) VALUES (?, ?, ?, ?)',
+// //             [name, party, age, qualification]
+// //         );
+// //         res.status(200).json({ message: 'Candidate added successfully' });
+// //     } catch (error) {
+// //         console.error('Error adding candidate:', error);
+// //         res.status(500).json({ message: 'Server error' });
+// //     }
+// // });
+
+
+// router.post('/admin/candidate', upload.single('photo'), async (req, res) => {
+//     const { name, party, age, qualification } = req.body;
+//     const photo = req.file ? `/uploads/candidates/${req.file.filename}` : null;
+//     const partyphoto = req.file ? `/uploads/candidates/${req.file.filename}` : null;
+
+//     try {
+//         await db.promise().query(
+//             'INSERT INTO candidates (name, party, age, qualification, photo, partyphoto) VALUES (?, ?, ?, ?, ?, ?)',
+//             [name, party, age, qualification, photo, partyphoto]
+//         );
+//         res.status(200).json({ message: 'Candidate added successfully' });
+//     } catch (error) {
+//         console.error('Error adding candidate:', error);
+//         res.status(500).json({ message: 'Server error' });
+//     }
+// });
+
+
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const multer = require('multer');
 const path = require('path');
-
 const fs = require('fs');
-const uploadDir = path.join(__dirname, '../uploads/candidates/');
 
-// Create the directory if it doesn't exist
+
+
+
+
+// Ensure upload directory exists
+const uploadDir = path.join(__dirname, '../uploads/candidates/');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+// Multer configuration for file uploads
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/candidates/'); // Directory to save images
+        cb(null, uploadDir); // Save to 'uploads/candidates/'
     },
     filename: (req, file, cb) => {
         cb(null, `${Date.now()}-${file.originalname}`);
     },
 });
-
 const upload = multer({ storage: storage });
 
-
-
-// GET route to fetch all candidates
+// Routes
+// Get all candidates
 router.get('/admin/candidates', async (req, res) => {
     try {
-        const [candidates] = await db.promise().query('SELECT id, name, party, age, qualification, photo FROM candidates');
+        const [candidates] = await db.promise().query(
+            'SELECT id, name, party, age, qualification, photo, partyphoto FROM candidates'
+        );
         res.json(candidates);
     } catch (error) {
         console.error('Error fetching candidates:', error);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Error fetching candidates.' });
     }
 });
 
-// GET route to fetch all candidates
 router.get('/admin/get_candidates', async (req, res) => {
     try {
         const [candidates] = await db.promise().query('SELECT id, name, party, age, qualification FROM candidates');
@@ -47,38 +126,42 @@ router.get('/admin/get_candidates', async (req, res) => {
     }
 });
 
-// POST route to add a new candidate
-// router.post('/admin/candidate', async (req, res) => {
-//     const { name, party, age, qualification } = req.body;
-
-//     try {
-//         await db.promise().query(
-//             'INSERT INTO candidates (name, party, age, qualification) VALUES (?, ?, ?, ?)',
-//             [name, party, age, qualification]
-//         );
-//         res.status(200).json({ message: 'Candidate added successfully' });
-//     } catch (error) {
-//         console.error('Error adding candidate:', error);
-//         res.status(500).json({ message: 'Server error' });
-//     }
-// });
 
 
-router.post('/admin/candidate', upload.single('photo'), async (req, res) => {
+// Add new candidate with two file uploads (photo and partyphoto)
+router.post('/admin/candidate', upload.fields([
+    { name: 'photo', maxCount: 1 },
+    { name: 'partyphoto', maxCount: 1 }
+]), async (req, res) => {
     const { name, party, age, qualification } = req.body;
-    const photo = req.file ? `/uploads/candidates/${req.file.filename}` : null;
+    // const photo = req.files?.photo?.[0]?.path || null;
+    // const partyphoto = req.files?.partyphoto?.[0]?.path || null;
+    
+    // const photo = req.file ? `/uploads/candidates/${req.file.filename}` : null;
+    //  const partyphoto = req.file ? `/uploads/candidates/${req.file.filename}` : null;
+
+    const photo = req.files?.photo?.[0]
+            ? path.join('uploads/candidates', path.basename(req.files.photo[0].path))
+            : null;
+        const partyphoto = req.files?.partyphoto?.[0]
+            ? path.join('uploads/candidates', path.basename(req.files.partyphoto[0].path))
+            : null;
 
     try {
         await db.promise().query(
-            'INSERT INTO candidates (name, party, age, qualification, photo) VALUES (?, ?, ?, ?, ?)',
-            [name, party, age, qualification, photo]
+            'INSERT INTO candidates (name, party, age, qualification, photo, partyphoto) VALUES (?, ?, ?, ?, ?, ?)',
+            [name, party, age, qualification, photo, partyphoto]
         );
-        res.status(200).json({ message: 'Candidate added successfully' });
+        res.status(200).json({ message: 'Candidate added successfully!' });
     } catch (error) {
         console.error('Error adding candidate:', error);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Error adding candidate.' });
     }
 });
+
+// Other endpoints remain unchanged...
+
+module.exports = router;
 
 // GET route to fetch all voters
 router.get('/admin/voters', async (req, res) => {
